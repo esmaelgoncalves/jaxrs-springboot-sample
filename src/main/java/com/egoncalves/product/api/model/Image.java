@@ -11,20 +11,22 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * @author Esmael
  *
  */
 @Entity
-@Table(name="image")
+@Table(name = "image")
 public class Image {
-	
+
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
-	private String path;
-	@ManyToOne
-	@JoinColumn(name="product_id")
+	@JsonIgnore
+	@ManyToOne()
+	@JoinColumn(name = "product_id")
 	private Product product;
 
 	public Long getId() {
@@ -35,12 +37,12 @@ public class Image {
 		this.id = id;
 	}
 
-	public String getPath() {
-		return path;
+	public Product getProduct() {
+		return product;
 	}
 
-	public void setPath(String path) {
-		this.path = path;
+	public void setProduct(Product product) {
+		this.product = product;
 	}
 
 }

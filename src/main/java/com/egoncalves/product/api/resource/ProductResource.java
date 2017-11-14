@@ -4,7 +4,6 @@
 package com.egoncalves.product.api.resource;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.ws.rs.DELETE;
@@ -18,10 +17,17 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import com.egoncalves.product.api.exception.ProductNotFoundException;
 import com.egoncalves.product.api.model.Product;
+import com.egoncalves.product.api.repository.ImageRepository;
+import com.egoncalves.product.api.repository.ProductRepository;
+import com.egoncalves.product.api.repository.filter.ProductFilter;
+import com.egoncalves.product.api.service.ImageService;
+import com.egoncalves.product.api.service.ProductService;
 
 /**
  * @author Esmael
@@ -31,65 +37,90 @@ import com.egoncalves.product.api.model.Product;
 @Path("/products")
 @Produces("application/json")
 public class ProductResource {
+	
+	@Autowired
+	private ProductRepository productRepository;
+	@Autowired
+	private ImageRepository imageRepository;
+	
+	@Autowired
+	private ProductService productService;
+	@Autowired
+	private ImageService imageService;
 
 	@GET
 	public Response listAllProducts(@QueryParam("images") boolean images, @QueryParam("children") boolean children) {
-		List<Product> products = Arrays.asList(new Product(1L, "Panela", null), new Product(2L, "Colher", null));
-
-		System.out.println("images: " + images);
-		System.out.println("children: " + children);
-
+		ProductFilter filter = new ProductFilter(null, images, children);
+		List<Product> products = productService.filterProducts(filter);
 		return Response.ok(products).build();
-	}
-
-	@Path("/{id}/childs")
-	@GET
-	public Response getProductChildren(@PathParam("id") Long id) {
-
-		return Response.ok(new Product(1L, "qUALQUER COISA", "descrição")).build();
 	}
 	
 	@Path("/{id}")
 	@GET
 	public Response getProductById(@QueryParam("images") boolean images, @QueryParam("children") boolean children,
 			@PathParam("id") Long id) {
+		
+		ProductFilter filter = new ProductFilter(id, images, children);
+		List<Product> products = productService.filterProducts(filter);
+		
+		return products.size() > 0 ? Response.ok(products).build() : Response.status(Response.Status.NOT_FOUND).entity(products).build();
+	}
+	
+	@Path("/{id}/children")
+	@GET
+	public Response getProductChildren(@PathParam("id") Long id) {
+		List<Product> products = productRepository.findByParentProduct(id);
 
-		return Response.ok(new Product(1L, "qUALQUER COISA", "descrição")).build();
+		return Response.ok(products).build();
 	}
 
 	@POST
 	public Response newProduct(Product product) {
-		product.setId(1L);
-		URI uri = ServletUriComponentsBuilder.fromCurrentRequestUri().path("/{codigo}").buildAndExpand(product.getId())
+		Product savedProduct = productService.save(product);
+		URI uri = ServletUriComponentsBuilder.fromCurrentRequestUri().path("/{codigo}").buildAndExpand(savedProduct.getId())
 				.toUri();
-		return Response.status(Status.CREATED).entity(product).contentLocation(uri).build();
+		return Response.status(Status.CREATED).entity(savedProduct).contentLocation(uri).build();
 	}
 	
 	@Path("/{id}")
 	@POST
 	public Response newProductChild(@PathParam("id") Long id, Product product) {
-		product.setId(1L);
-		URI uri = ServletUriComponentsBuilder.fromCurrentRequestUri().path("/{codigo}").buildAndExpand(product.getId())
-				.toUri();
-		return Response.status(Status.CREATED).entity(product).contentLocation(uri).build();
+		try {
+			Product savedProduct = productService.saveProductChild(id, product);
+			URI uri = ServletUriComponentsBuilder.fromCurrentRequestUri().path("/{codigo}").buildAndExpand(savedProduct.getId())
+					.toUri();
+			return Response.status(Status.CREATED).entity(product).contentLocation(uri).build();
+		} catch (ProductNotFoundException e) {
+			return Response.status(Response.Status.NOT_FOUND).build();
+		}
+		
 	}
 
 	@Path("/{id}")
 	@PUT
 	public Response updateProduct(@PathParam("id") Long id, Product product) {
-
-		return Response.ok(product).build();
+		try {
+			productService.update(id, product);
+			return Response.ok(product).build();
+		} catch (ProductNotFoundException e) {
+			return Response.status(Response.Status.NOT_FOUND).build();
+		}
 	}
 	
 	@Path("/{id}")
 	@DELETE
 	public Response deleteProduct(@PathParam("id") Long id) {
-		return Response.noContent().build();
+		try {
+			productService.delete(id);
+			return Response.noContent().build();
+		} catch (ProductNotFoundException e) {
+			return Response.status(Response.Status.NOT_FOUND).build();
+		}	
 	}
 	
 	@Path("/{id}/images")
 	public ImageResource getImageSubResource(@PathParam("id")Long id) {
-		Product p = new Product(id, "Produto1", "Descrição");
-		return new ImageResource(p);
+		Product p = productRepository.findOne(id);
+		return new ImageResource(p, imageRepository, imageService);
 	}
 }

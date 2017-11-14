@@ -3,9 +3,8 @@
  */
 package com.egoncalves.product.api.model;
 
-import java.util.List;
+import java.util.Set;
 
-import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
@@ -15,6 +14,9 @@ import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 /**
  * @author Esmael
@@ -28,19 +30,21 @@ public class Product {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
+	@NotNull
 	private String name;
 
 	private String description;
 
-	@ManyToOne
+	@JsonIgnore
+	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "parent_id")
 	private Product parent;
 
-	@OneToMany(mappedBy = "parent", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	private List<Product> children;
+	@OneToMany(mappedBy = "parent", fetch = FetchType.LAZY)
+	private Set<Product> children;
 
-	@OneToMany(mappedBy = "product", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-	private List<Image> images;
+	@OneToMany(mappedBy = "product", fetch = FetchType.LAZY)
+	private Set<Image> images;
 
 	public Product() {
 		super();
@@ -85,19 +89,19 @@ public class Product {
 		this.parent = parent;
 	}
 
-	public List<Product> getChildren() {
+	public Set<Product> getChildren() {
 		return children;
 	}
 
-	public void setChildren(List<Product> children) {
+	public void setChildren(Set<Product> children) {
 		this.children = children;
 	}
 
-	public List<Image> getImages() {
+	public Set<Image> getImages() {
 		return images;
 	}
 
-	public void setImages(List<Image> images) {
+	public void setImages(Set<Image> images) {
 		this.images = images;
 	}
 
