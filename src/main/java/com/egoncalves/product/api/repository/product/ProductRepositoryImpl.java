@@ -32,8 +32,6 @@ public class ProductRepositoryImpl implements ProductRepositoryQuery {
 
 		TypedQuery<Product> query = (TypedQuery<Product>) manager.createQuery(queryBuilder.toString());
 
-		System.out.println(queryBuilder.toString());
-
 		if (productFilter.getId() != null) {
 			query.setParameter("id", productFilter.getId());
 		}

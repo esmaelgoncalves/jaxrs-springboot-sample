@@ -4,11 +4,15 @@
 
 * Application: PRODUCT-API is a Restful service using JAX-RS to perform CRUD operations on a Product resource using Image as a sub-resource of Product.
 * Version : 1.0.0-SNAPSHOT
+* Test Coverage: 83,8%
 
 ### General Considerations ###
 
 * In addition to the requested MER, it was considered that the physical image files would be stored on an image server, for example FTP. So in the database would be stored only the reference to the actual file. Thus the system was developed considering the existence of an additional field called 'path' in the Image table.
-* 
+* The application uses de embbeded in-memory database H2.
+* The database model is auto generated when the application up and run.
+* For tests purposes there two files in tests/resources: schema.sql and data.sql, to create and populate the database for some unit tests.
+
 
 
 ### Set Up and Running ###
@@ -20,12 +24,25 @@
 mvn clean install -DskipTests
 ```
 
-* To run automated tests: Run the follow command line
+* To Compile with test : Run the follow command line
+```
+mvn clean install
+```
+
+* To run just automated tests: Run the follow command line
 ```
 mvn test
 ```
 
-* To run application:  Run the follow command line
+* To run application with spring-boot maven plugin:  Run the follow command line
+```
+mvn spring-boot:run
+```
+
+* To run application as a packaged application:  Run the follow command line
+```
+java -jar ${target}/product-api-1.0.0-SNAPSHOT.jar
+```
 
 ### EndPoint Resources ###
 
@@ -57,6 +74,55 @@ Body
 }
 ```
 
+Success
+```
+Status Code: 201
+Headers: content-type: application/json, content-location: localhost:8080/products/1
+
+{
+	"id:" 1,
+	"name": "Name of the Product",
+	"description": "You can register a description"
+}
+```
+
+##### Create a new product child#####
+
+```
+Uri: /products/{id}
+Method: [POST] 
+```
+
+Call
+```
+${RequestPath}/products/1
+```
+
+Headers
+```
+Content-Type: application/json
+```
+
+Body
+```json
+{
+	"name": "Name of the Product Child",
+	"description": "You can register a description"
+}
+```
+
+Success
+```
+Status Code: 201
+Headers: content-type: application/json, content-location: localhost:8080/products/1/2
+
+{
+	"id:" 2,
+	"name": "Name of the Product Child",
+	"description": "You can register a description"
+}
+```
+
 ----------
 
 ##### Update a product #####
@@ -84,6 +150,18 @@ Body
 }
 ```
 
+Success
+```
+Status Code: 200
+Headers: content-type: application/json
+
+{
+	"id:" 1,
+	"name": "Name with alteration",
+	"description": "Description with alteration"
+}
+```
+
 ----------
 
 ##### Delete a product #####
@@ -103,6 +181,16 @@ Headers
 Content-Type: application/json
 ```
 
+Success
+```
+Status Code: 204
+```
+
+Error (Not Found)
+```
+Status Code: 404
+```
+
 ##### Get all products WITHOUT RELATED ENTITIES #####
 
 ```
@@ -119,6 +207,36 @@ Headers
 ```
 Content-Type: application/json
 ```
+
+Success
+```
+Status Code: 200
+Headers: content-type: application/json
+
+[
+    {
+        "id": 1,
+        "name": "PS4",
+        "description": "Game Console",
+        "children": null,
+        "images": null
+    },
+    {
+        "id": 2,
+        "name": "PS4 - Controller",
+        "description": "The Game Console Controller",
+        "children": null,
+        "images": null
+    },
+    {
+        "id": 3,
+        "name": "Iphone X",
+        "description": "Apple celular gadget",
+        "children": null,
+        "images": null
+    }
+]
+```
 ----------
 
 ##### Get all products WITH RELATED ENTITIES (child product and/or images) #####
@@ -130,12 +248,74 @@ Method: [GET]
 
 Call
 ```
-${RequestPath}/products?images=true&children=false
+${RequestPath}/products?images=true&children=true
 ```
 
 Headers
 ```
 Content-Type: application/json
+```
+
+Success
+```
+Status Code: 200
+Headers: content-type: application/json
+
+[
+    {
+        "id": 1,
+        "name": "PS4",
+        "description": "Game Console",
+        "children": [
+            {
+                "id": 2,
+                "name": "PS4 - Controller",
+                "description": "The Game Console Controller",
+                "children": [],
+                "images": [
+                    {
+                        "id": 2,
+                        "path": "ftp://location/IMAGE002"
+                    }
+                ]
+            }
+        ],
+        "images": [
+            {
+                "id": 1,
+                "path": "ftp://location/IMAGE001"
+            }
+        ]
+    },
+    {
+        "id": 2,
+        "name": "PS4 - Controller",
+        "description": "The Game Console Controller",
+        "children": [],
+        "images": [
+            {
+                "id": 2,
+                "path": "ftp://location/IMAGE002"
+            }
+        ]
+    },
+    {
+        "id": 3,
+        "name": "Iphone X",
+        "description": "Apple celular gadget",
+        "children": [],
+        "images": [
+            {
+                "id": 3,
+                "path": "ftp://location/IMAGE003"
+            },
+            {
+                "id": 4,
+                "path": "ftp://location/IMAGE004"
+            }
+        ]
+    }
+]
 ```
 
 ----------
@@ -155,7 +335,23 @@ ${RequestPath}/products/1
 Headers
 ```
 Content-Type: application/json
+```
 
+Success
+```
+Status Code: 200
+Headers: content-type: application/json
+
+[
+    {
+        "id": 1,
+        "name": "PS4",
+        "description": "Game Console",
+        "children": null,
+        "images": null
+    }
+]
+```
 ----------
 
 ##### Get a product WITH RELATED ENTITIES (child product and/or images) #####
@@ -173,6 +369,31 @@ ${RequestPath}/products/1?images=false&children=true
 Headers
 ```
 Content-Type: application/json
+```
+
+Success
+```
+Status Code: 200
+Headers: content-type: application/json
+
+[
+    {
+        "id": 1,
+        "name": "PS4",
+        "description": "Game Console",
+        "children": [
+            {
+                "id": 2,
+                "name": "PS4 - Controller",
+                "description": "The Game Console Controller",
+                "children": null,
+                "images": null
+            }
+        ],
+        "images": null
+    }
+]
+```
 
 ----------
 
@@ -193,6 +414,21 @@ Headers
 Content-Type: application/json
 ```
 
+Success
+```
+Status Code: 200
+Headers: content-type: application/json
+
+[
+    {
+        "id": 2,
+        "name": "PS4 - Controller",
+        "description": "The Game Console Controller",
+        "children": null,
+        "images": null
+    }
+]
+```
 ----------
 
 ##### Get set of images for specific product #####
@@ -212,6 +448,18 @@ Headers
 Content-Type: application/json
 ```
 
+Success
+```
+Status Code: 200
+Headers: content-type: application/json
+
+[
+    {
+        "id": 1,
+        "path": "ftp://location/IMAGE001"
+    }
+]
+```
 ----------
 
 #### Images is a sub-resource of product####
@@ -240,6 +488,16 @@ Body
 }
 ```
 
+Success
+```
+Status Code: 201
+Headers: content-type: application/json, content-location: localhost:8080/products/1/images/1
+
+{
+	"id:" 1,
+	"path": "Name with alteration"
+}
+```
 ----------
 
 ##### Update a image#####
@@ -266,6 +524,17 @@ Body
 }
 ```
 
+Success
+```
+Status Code: 200
+Headers: content-type: application/json
+
+{
+	"id:" 1,
+	"path": "Name with alteration"
+}
+```
+
 ----------
 
 ##### Delete a image#####
@@ -283,6 +552,16 @@ ${RequestPath}/products/1/images/1
 Headers
 ```
 Content-Type: application/json
+```
+
+Success
+```
+Status Code: 204
+```
+
+Error (Not Found)
+```
+Status Code: 404
 ```
 
 ----------

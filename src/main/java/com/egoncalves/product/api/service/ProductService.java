@@ -41,14 +41,12 @@ public class ProductService {
 		
 		BeanUtils.copyProperties(product, savedProduct, "id", "children", "images");
 		return productRepository.save(savedProduct);
-		
 	}
 	
 	public void delete(Long id) throws ProductNotFoundException {
 		Product savedProduct = findOneProduct(id);
 		
 		productRepository.delete(savedProduct);
-		
 	}
 	
 	public List<Product> filterProducts(ProductFilter productFilter){
@@ -57,7 +55,7 @@ public class ProductService {
 		return list;
 	}
 	
-	private Product findOneProduct(Long id) throws ProductNotFoundException {
+	public Product findOneProduct(Long id) throws ProductNotFoundException {
 		Product savedProduct = productRepository.findOne(id);
 		
 		if(savedProduct == null) {
